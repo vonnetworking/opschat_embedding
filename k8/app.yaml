@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: opschat-ingestion
+  labels:
+    app: opschat-ingestion
+spec:
+  replicas: 10
+  serviceName: opschat-ingestion
+  selector:
+    matchLabels:
+      app: opschat-ingestion
+  template:
+    metadata:
+      labels:
+        app: opschat-ingestion
+    spec:
+      containers:
+      - name: opschat-ingestion
+        image: tfearn/opschat-ingestion-app:latest
+        env:
+        - name: VECTOR_STORE_QUEUE
+          value: "queue/vectorstore"
+        - name: EMBEDDING_MODEL
+          value: "sentence-transformers/all-MiniLM-L6-v2"
+        - name: EMBEDDING_MODEL_LOCATION
+          value: "./models/sentence-transformers-all-MiniLM-L6-v2"
+        - name: ACTIVEMQ_HOST
+          value: "10.0.0.22"
+        - name: ACTIVEMQ_PORT
+          value: "61616"
+        - name: HOSTNAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: EMBEDDING_QUEUE
+          value: "queue/embedding" # Unique queue name based on pod hostname
