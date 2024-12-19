@@ -3,6 +3,7 @@ import uuid
 import os
 import json
 import asyncio
+from activemq_util import ActiveMQ
 
 def process_program_logs(line):
     tokens = line.strip().split(',')
@@ -47,55 +48,45 @@ def load_files(subdirectory):
 def chunk_list(lst, chunk_size):
     return [lst[i:i + chunk_size] for i in range(0, len(lst), chunk_size)]
 
-async def send_message_to_fifo_queue(sqs, queue_url, message_body):
-    # Generate deduplication_id
-    deduplication_id = str(uuid.uuid4())
-    
+async def send_message(activemq, queue, message_body):
     try:
-        response = sqs.send_message(
-            QueueUrl=queue_url,
-            MessageBody=message_body,
-            #MessageGroupId="group1",
-            #MessageDeduplicationId=deduplication_id
-        )
-        print("Message sent! MessageId:", response['MessageId'])
-        return response
+        activemq.write(message_body, queue_name=queue)
+        print(f"Message sent to queue: {queue}")
     except Exception as e:
-        print("Error sending message to SQS:", str(e))
-        raise
+        print(f"Failed to send message: {e}")
+
 
 async def main():
-    sqs = boto3.client('sqs')
-    queue_url = os.getenv("AWS_QUEUE_URL")
+    local = False
+    embedding_queue = os.getenv("EMBEDDING_QUEUE")
 
+    # Connect to ActiveMQ
+    try:
+        activemq = ActiveMQ(host='localhost', port=61616, username='artemis', password='artemis')
+        activemq.connect()
+    except Exception as e:
+        print(f"Failed to connect to ActiveMQ: {e}")
+        return
+    
     items = load_files('./data')
 
-    texts = []
-    for item in items:
-        text = item["text"]
-        texts.append(text)
-
-    chunks = chunk_list(texts, 100)
+    chunks = chunk_list(items, 1000)
     async with asyncio.TaskGroup() as tg:
-        for chunk in chunks:
-            tg.create_task(send_message_to_fifo_queue(sqs, queue_url, json.dumps(chunk)))
+        if local:
+            for chunk in chunks:
+                queue_name = embedding_queue + "/unknown-host"
+                tg.create_task(send_message(activemq, queue_name, json.dumps(chunk)))
+        else:
+            i = 0
+            for chunk in chunks:
+                queue_name = embedding_queue + "/opschat-ingestion-" + str(i) 
+                tg.create_task(send_message(activemq, queue_name, json.dumps(chunk)))
+                i += 1
+                if i > 9:
+                    i = 0
+
+    input("Press Enter to end this program...")
+    activemq.disconnect()
 
 # Run the asyncio main function
 asyncio.run(main())
-
-'''
-if __name__ == "__main__":
-    sqs = boto3.client('sqs')
-    queue_url = os.getenv("AWS_QUEUE_URL")
-
-    items = load_files('./data')
-
-    texts = []
-    for item in items:
-        text = item["text"]
-        texts.append(text)
-
-    chunks = chunk_list(texts, 100)
-    for chunk in chunks:
-        send_message_to_fifo_queue(sqs, queue_url, json.dumps(chunk))
-'''

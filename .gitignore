@@ -163,3 +163,4 @@ cython_debug/
 
 k8/
 opschat-ingestion-env/
+models/
