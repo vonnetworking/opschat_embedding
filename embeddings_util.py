@@ -3,16 +3,25 @@ import torch
 import torch.nn.functional as F
 
 class EmbeddingsUtil:
-    def __init__(self, model):
-        self.model = model
+    def __init__(self, model_path):
+        self.model_path = model_path
 
     def get(self, sentences):
-        # Load model from HuggingFace Hub
-        tokenizer = AutoTokenizer.from_pretrained(self.model)
-        model = AutoModel.from_pretrained(self.model)
+        tokenizer = AutoTokenizer.from_pretrained(self.model_path, device='cuda')
+        model = AutoModel.from_pretrained(self.model_path, device_map="cuda:0")
+
+        # Tokenize sentences
+        encoded_input = tokenizer(sentences, padding=True, truncation=True, return_tensors='pt').to('cuda')
+
+        '''
+        # Mac code
+        # Load model and tokenizer from local directory
+        tokenizer = AutoTokenizer.from_pretrained(self.model_path)
+        model = AutoModel.from_pretrained(self.model_path)
 
         # Tokenize sentences
         encoded_input = tokenizer(sentences, padding=True, truncation=True, return_tensors='pt')
+        '''
 
         # Compute token embeddings
         with torch.no_grad():
@@ -25,8 +34,8 @@ class EmbeddingsUtil:
         embeddings = F.normalize(sentence_embeddings, p=2, dim=1)
         return embeddings.tolist()
         
-    #Mean Pooling - Take attention mask into account for correct averaging
+    # Mean Pooling - Take attention mask into account for correct averaging
     def mean_pooling(self, model_output, attention_mask):
-        token_embeddings = model_output[0] #First element of model_output contains all token embeddings
+        token_embeddings = model_output[0]  # First element of model_output contains all token embeddings
         input_mask_expanded = attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
         return torch.sum(token_embeddings * input_mask_expanded, 1) / torch.clamp(input_mask_expanded.sum(1), min=1e-9)
