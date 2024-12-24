@@ -7,21 +7,22 @@ class EmbeddingsUtil:
         self.model_path = model_path
 
     def get(self, sentences):
+        '''
+        # GPU code
         tokenizer = AutoTokenizer.from_pretrained(self.model_path, device='cuda')
         model = AutoModel.from_pretrained(self.model_path, device_map="cuda:0")
 
         # Tokenize sentences
         encoded_input = tokenizer(sentences, padding=True, truncation=True, return_tensors='pt').to('cuda')
-
         '''
-        # Mac code
+
+        # CPU code
         # Load model and tokenizer from local directory
         tokenizer = AutoTokenizer.from_pretrained(self.model_path)
         model = AutoModel.from_pretrained(self.model_path)
 
         # Tokenize sentences
         encoded_input = tokenizer(sentences, padding=True, truncation=True, return_tensors='pt')
-        '''
 
         # Compute token embeddings
         with torch.no_grad():

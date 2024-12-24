@@ -5,7 +5,7 @@ metadata:
   labels:
     app: opschat-ingestion
 spec:
-  replicas: 10
+  replicas: 1
   serviceName: opschat-ingestion
   selector:
     matchLabels:
@@ -26,7 +26,7 @@ spec:
         - name: EMBEDDING_MODEL_LOCATION
           value: "./models/sentence-transformers-all-MiniLM-L6-v2"
         - name: ACTIVEMQ_HOST
-          value: "10.0.0.22"
+          value: "192.168.49.1"
         - name: ACTIVEMQ_PORT
           value: "61616"
         - name: HOSTNAME
