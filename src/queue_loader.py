@@ -89,7 +89,7 @@ async def main():
     
     embedding_queue = os.getenv("EMBEDDING_QUEUE")
     chunk_size = int(os.getenv("EMBEDDING_CHUNK_SIZE", 1024))
-    log_dir = os.getenv("LOG_DIR", "/home/tf/docker_logs") 
+    log_dir = os.getenv("EMBEDDING_LOG_DIR", "/tmp/logs") 
     
     print("Starting Queue Load...")
     starting_ts = time.time()
@@ -119,7 +119,7 @@ async def main():
    
     ending_ts = time.time()
     total_runtime = ending_ts - starting_ts
-    print(f"EXECUTION COMPLETE; RUNTIME: {total_runtime}")
+    print(f"EXECUTION COMPLETE; RECORDS: {len(items)}; RUNTIME: {total_runtime}")
     activemq.disconnect()
 
 # Run the asyncio main function

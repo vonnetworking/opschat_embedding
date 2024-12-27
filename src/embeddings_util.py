@@ -1,28 +1,29 @@
 from transformers import AutoTokenizer, AutoModel
 import torch
 import torch.nn.functional as F
+import os
 
 class EmbeddingsUtil:
     def __init__(self, model_path):
         self.model_path = model_path
-
+        self.cuda_device = os.getenv('EMBEDDING_CUDA_DEVICE', 'cuda:0')
     def get(self, sentences):
-        '''
+        
         # GPU code
-        tokenizer = AutoTokenizer.from_pretrained(self.model_path, device='cuda')
-        model = AutoModel.from_pretrained(self.model_path, device_map="cuda:0")
+        tokenizer = AutoTokenizer.from_pretrained(self.model_path, device=self.cuda_device)
+        model = AutoModel.from_pretrained(self.model_path, device_map=self.cuda_device)
 
         # Tokenize sentences
-        encoded_input = tokenizer(sentences, padding=True, truncation=True, return_tensors='pt').to('cuda')
-        '''
+        encoded_input = tokenizer(sentences, padding=True, truncation=True, return_tensors='pt').to(self.cuda_device)
+    
 
         # CPU code
         # Load model and tokenizer from local directory
-        tokenizer = AutoTokenizer.from_pretrained(self.model_path)
-        model = AutoModel.from_pretrained(self.model_path)
+        # tokenizer = AutoTokenizer.from_pretrained(self.model_path)
+        # model = AutoModel.from_pretrained(self.model_path)
 
         # Tokenize sentences
-        encoded_input = tokenizer(sentences, padding=True, truncation=True, return_tensors='pt')
+        # encoded_input = tokenizer(sentences, padding=True, truncation=True, return_tensors='pt')
 
         # Compute token embeddings
         with torch.no_grad():

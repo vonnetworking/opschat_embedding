@@ -62,7 +62,8 @@ def process_message(frame):
     modified_items = merge_embeddings(embeddings_util, json.loads(frame.body), message_hash=message_hash)
     
     # Write the items with merged embeddings to the vector store queue
-    activemq.write(json.dumps(modified_items), queue_name=vector_store_queue, headers={'destination-type': 'ANYCAST'})
+    if not os.getenv('EMBEDDING_TEST', False): #if we're testing, dont write out the result to a dest MQ
+        activemq.write(json.dumps(modified_items), queue_name=vector_store_queue, headers={'destination-type': 'ANYCAST', 'activemq.prefetchSize': 3})
     message_processed += 1  # Increment the global counter
  
 if __name__ == "__main__":
