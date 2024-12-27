@@ -3,11 +3,14 @@ EMBEDDING_WORKERS=${EMBEDDING_WORKERS:-2}
 EMBEDDING_HOST_LOG_DIR=${EMBEDDING_HOST_LOG_DIR:-/tmp/docker_embedding_logs}
 EMBEDDING_LOG_DIR=${EMBEDDING_LOG_DIR:-/tmp/docker_embedding_logs}
 
+EMBEDDING_TEST=${EMBEDDING_TEST:-true}
+
 mkdir -p ${EMBEDDING_HOST_LOG_DIR}
 
 for I in $(seq 1 ${EMBEDDING_WORKERS}); do
 	export J=`echo ${I}-1 | bc`
-       export DOCKER_CONTAINER_NAME=embedding-app-${I}	
+        export DOCKER_CONTAINER_NAME=embedding-app-${I}	
+	
 	docker rm --force ${DOCKER_CONTAINER_NAME:-embedding_app}
        	docker run \
 	-d \
@@ -20,10 +23,9 @@ for I in $(seq 1 ${EMBEDDING_WORKERS}); do
 	-e EMBEDDING_MODEL=${EMBEDDING_MODEL:-sentence-transformers/all-MiniLM-L6-v2expo} \
 	-e EMBEDDING_MODEL_LOCATION=${EMBEDDING_MODEL_LOCATION:-sentence-transformers/all-MiniLM-L6-v2} \
 	-e EMBEDDING_QUEUE=${EMBEDDING_QUEUE:-/queue/embedding} \
-	-e EMBEDDING_QUEUE_LOCAL=${EMBEDDING_QUEUE_LOCAL:= } \
+	-e EMBEDDING_TEST=${EMBEDDING_TEST:= } \
 	-e EMBEDDING_CUDA_DEVICE="cuda:${J}" \
 	-e VECTOR_STORE_QUEUE=${VECTOR_STORE_QUEUE:-/queue/vectorstore} \
 	--name ${DOCKER_CONTAINER_NAME:-embedding_app} \
 	${DOCKER_IMAGE:-tfearn/opschat-ingestion-app-w-gpu}
 done
-# docker logs --follow ${DOCKER_CONTAINER_NAME:-embedding_app}
